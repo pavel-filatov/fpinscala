@@ -25,4 +25,27 @@ object OptionsApp extends App {
   println("filter on Some: " + op.filter(_ > 2))
   println("filter on None: " + none.filter(_ < 2))
 
+  println()
+  println()
+
+  println("variance: " + functions.variance(List(1, 2, 3, 4)))
+  println("variance: " + functions.variance(List(1, 1, 1, 1, 1)))
+  println("variance: " + functions.variance(Nil))
+
+  println()
+  println("parseInt: " + functions.parseInt("10"))
+  println("parseInt: " + functions.parseInt("abc"))
+
+  println()
+  println("map2: " + functions.map2(Some(1), Some(2))(_ + _))
+  println("map2: " + functions.map2(None: Option[Int], Some(2))(_ + _))
+  println("map2: " + functions.map2(Some(1), None: Option[Int])(_ + _))
+
+  println()
+  println("sequence:\t" + functions.sequence(List(Some(1), Some(4), Some(6))))
+  println("sequence:\t" + functions.sequence(List(Some(1), None, Some(6))))
+  println("sequenceTraverse:\t" + functions.sequenceTraverse(List(Some(1), Some(4), Some(6))))
+  println("sequenceTraverse:\t" + functions.sequenceTraverse(List(Some(1), None, Some(6))))
+
+
 }
