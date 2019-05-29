@@ -18,18 +18,37 @@ sealed trait Stream[+A] {
     case _ => Empty
   }
 
-  // ex. 5.3
+  // ex. 5.2
   def drop(n: Int): Stream[A] = this match {
     case s if n == 0 => s
     case Cons(a, as) if n > 0 => as().drop(n - 1)
     case _ => Empty
   }
 
-  // ex. 5.4
+  // ex. 5.3
   def takeWhile(p: A => Boolean): Stream[A] = this match {
     case Cons(a, as) if p(a()) => Cons(a, () => as().takeWhile(p))
     case _ => Empty
   }
+
+  def foldRight[B](z: B)(f: (A, => B) => B): B = this match {
+    case Cons(a, as) => f(a(), as().foldRight(z)(f))
+    case _ => z
+  }
+
+  // ex. 5.4
+  def forAll(p: A => Boolean): Boolean = this match {
+    case Empty => true
+    case Cons(a, as) if p(a()) => as().forAll(p)
+    case _ => false
+  }
+
+  // ex. 5.5
+  def takeWhileViaFold(p: A => Boolean): Stream[A] =
+    foldRight(Empty: Stream[A]) { (a, acc) =>
+      if (p(a)) Stream.cons(a, acc)
+      else Empty
+    }
 
   override def toString: String = this match {
     case Empty => "Empty"

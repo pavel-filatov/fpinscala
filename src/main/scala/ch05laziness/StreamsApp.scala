@@ -17,7 +17,14 @@ object StreamsApp extends App {
   println("drop: " + b.drop(30).toList)
 
   println()
-  println("takeWhile:" + a.takeWhile(_ < 3).toList)
-  println("takeWhile:" + a.takeWhile(_ > 3).toList)
+  println("forAll: " + a.forAll(_ > 0))
+  println("forAll: " + b.forAll(_ % 10 == 0))
+  println("forAll: " + b.forAll(_ % 11 == 0))
+
+  println()
+  println("takeWhile: " + a.takeWhile(_ < 3).toList)
+  println("takeWhile: " + a.takeWhile(_ > 3).toList)
+  println("takeWhileViaFold: " + a.takeWhileViaFold(_ < 3).toList)
+  println("takeWhileViaFold: " + a.takeWhileViaFold(_ > 3).toList)
 
 }
