@@ -1,27 +1,45 @@
 package ch06state
 
-case class State[S, +A](run: S => (A, S)) {
+import scala.annotation.tailrec
+
+case class State[S, +A](run: S => (A, S)) { self =>
+
   def get: State[S, S] = State(s => (s, s))
+
   def set(s: S): State[S, Unit] = State(_ => ((), s))
 
-  def modify(f: S => S): State[S, Unit] = map(get)(s => set(f(s)))
+  def modify(f: S => S): State[S, Unit] = get map (s => set(f(s)))
 
-  def unit[S, A](a: A): State[S, A] = State[S, A](s => (a, s))
-
-  def flatMap[S, A, B](sa: State[S, A])(f: A => State[S, B]): State[S, B] =
+  def flatMap[B](f: A => State[S, B]): State[S, B] =
     new State[S, B](s => {
-      val (a, newState) = sa.run(s)
+      val (a, newState) = run(s)
       f(a).run(newState)
     })
 
-  def map[S, A, B](sa: State[S, A])(f: A => B): State[S, B] =
-    flatMap(sa)(a => unit(f(a)))
+  def map[B](f: A => B): State[S, B] =
+    flatMap(a => State.unit(f(a)))
 
-  def map2[S, A, B, C](sa: State[S, A], sb: State[S, B])
-                      (f: (A, B) => C): State[S, C] =
-    flatMap(sa) { a =>
-      flatMap(sb) { b =>
-        unit(f(a, b))
+  def map2[B, C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
+    for {
+      a <- self
+      b <- sb
+    } yield f(a, b)
+
+}
+
+object State {
+
+  def unit[S, A](a: A): State[S, A] = State[S, A](s => (a, s))
+
+  def sequence[S, A](states: List[State[S, A]]): State[S, List[A]] = {
+
+    @tailrec
+    def iter(states: List[State[S, A]], acc: State[S, List[A]]): State[S, List[A]] =
+      states match {
+        case s :: others => iter(others, acc flatMap (xs => s map ( x => x :: xs)))
+        case Nil => acc map (_.reverse)
       }
-    }
+
+    iter(states, unit(Nil))
+  }
 }
