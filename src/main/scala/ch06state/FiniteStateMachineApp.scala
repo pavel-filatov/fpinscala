@@ -1,9 +1,12 @@
 package ch06state
 
+import ch06state.State._
+
 object FiniteStateMachineApp extends FiniteStateMachineApp with App {
 
   val initialMachine: Machine = Machine(isLocked = true, candies = 5, coins = 10)
-  val inputs = Coin :: Turn :: Coin :: Turn :: Coin :: Turn :: Nil
+  // val inputs = Coin :: Turn :: Coin :: Turn :: Coin :: Turn :: Coin :: Turn :: Nil
+  val inputs = Nil
 
   println(simulateMachine(inputs) run initialMachine)
 }
@@ -28,18 +31,28 @@ class FiniteStateMachineApp {
     def isOutOfCandies: Boolean = candies == 0
   }
 
-  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = {
-    val initialState: State[Machine, (Int, Int)] = State.unit((0, 0))
-    inputs.foldLeft(initialState)(processSingleInput)
-  }
+  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = for {
+    _ <- sequence(inputs map (modify[Machine] _ compose update))
+    s <- get
+  } yield (s.candies, s.coins)
+    
+
+  def update(input: Input)(machine: Machine): Machine =
+    (input, machine) match {
+      case (_, Machine(_, 0, _)) => machine
+      case (Coin, Machine(true, candies, coins)) => 
+        Machine(false, candies, coins + 1)
+      case (Turn, Machine(false, candies, coins)) =>
+        Machine(true, candies - 1, coins)
+      case _ => machine
+    }
 
   private def processSingleInput(currentState: State[Machine, (Int, Int)],
                                  input: Input): State[Machine, (Int, Int)] =
     for {
-      state <- currentState
-      machine <- currentState.get
-
-      (candies, coins) = state
+      machine <- get[Machine]
+      candies = machine.candies
+      coins   = machine.coins
 
       current = (machine, candies, coins)
 
@@ -57,7 +70,7 @@ class FiniteStateMachineApp {
               (machine.dispense().lock(), candies - 1, coins)
         }
 
-      _ <- currentState.set(newMachine)
+      _ <- set(newMachine)
 
     } yield (updatedCandies, updatedCoins)
 
