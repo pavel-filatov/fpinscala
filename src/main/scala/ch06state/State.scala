@@ -8,7 +8,11 @@ case class State[S, +A](run: S => (A, S)) { self =>
 
   def set(s: S): State[S, Unit] = State(_ => ((), s))
 
-  def modify(f: S => S): State[S, Unit] = get map (s => set(f(s)))
+  def modify(f: S => S): State[S, Unit] =
+    for {
+      s <- get
+      _ <- set(f(s))
+    } yield ()
 
   def flatMap[B](f: A => State[S, B]): State[S, B] =
     new State[S, B](s => {
